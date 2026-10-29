@@ -1,0 +1,49 @@
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: authify-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: authify_app        # must match the DB name in DB_URL below
+      MYSQL_USER: ${DB_USERNAME}         # app user, NOT root
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - mysql_data:/var/lib/mysql        # data survives container restarts
+    ports:
+      - "127.0.0.1:3308:3306"            # optional: lets your IDE/DB tool connect from the host
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build: ./backend
+    container_name: authify-backend
+    environment:
+      # Names on the left must match the ${...} placeholders in application.properties
+      DB_URL: jdbc:mysql://mysql:3306/authify_app   # "mysql" = service name, not localhost
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY}
+      SMTP_HOST: ${SMTP_HOST}
+      SMTP_PORT: ${SMTP_PORT}
+      SMTP_USERNAME: ${SMTP_USERNAME}
+      SMTP_PASSWORD: ${SMTP_PASSWORD}
+      SMTP_FROM: ${SMTP_FROM}
+    depends_on:
+      mysql:
+        condition: service_healthy       # wait until MySQL is actually ready
+    ports:
+      - "8080:8080"                      # optional: handy for testing with Postman
+
+  frontend:
+    build: ./frontend
+    container_name: authify-frontend
+    depends_on:
+      - backend
+    ports:
+      - "3000:80"
+
+volumes:
+  mysql_data:

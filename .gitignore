@@ -1,1 +1,6 @@
 /workbench creds.txt
+# Ignore the environment file
+.env
+
+# Do NOT ignore the example file
+!.env.example
