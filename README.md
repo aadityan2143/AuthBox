@@ -76,7 +76,7 @@ The frontend is a Vite React app with the following default routing:
 The frontend connects to the backend using:
 
 ```js
-http://localhost:8080/api/v1
+localhost:8080
 ```
 
 This is configured in:
@@ -223,6 +223,22 @@ The API base path is:
 
 ```text
 http://localhost:8080/api/v1
+```
+
+## Debug the Dockerized Backend
+
+Start the backend with the debug override (from the repository root):
+
+```powershell
+docker compose -f docker-compose.yml -f docker-compose.debug.yml up --build
+```
+
+The override enables the Java debugger on port `5005`, bound to localhost only. It does not change the normal Compose setup. In IntelliJ IDEA, create a **Remote JVM Debug** run configuration with host `localhost` and port `5005`, then start debugging. Set breakpoints in the backend source and send a request to the API, such as `http://localhost:8080/api/v1/register`.
+
+To debug application startup, change `suspend=n` to `suspend=y` in `docker-compose.debug.yml`; the JVM will wait for the IDE to attach before starting. Stop the debug stack with:
+
+```powershell
+docker compose -f docker-compose.yml -f docker-compose.debug.yml down
 ```
 
 ### 5. Run the Frontend

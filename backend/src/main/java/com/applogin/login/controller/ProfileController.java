@@ -3,7 +3,6 @@ package com.applogin.login.controller;
 import com.applogin.login.io.ProfileRequest;
 import com.applogin.login.io.ProfileResponse;
 import com.applogin.login.services.ProfileService;
-import com.applogin.login.services.impl.EmailService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -17,15 +16,11 @@ import org.springframework.web.bind.annotation.*;
 public class ProfileController {
 
     private final ProfileService profileService;
-    private final EmailService emailService;
 
     @RequestMapping("/register")
     @ResponseStatus(HttpStatus.CREATED)
     public ProfileResponse register(@Valid @RequestBody ProfileRequest profileRequest) {
-        ProfileResponse profileResponse = profileService.createProfile(profileRequest);
-        //TODO create email trigger
-        emailService.sendWelcomeEmail(profileResponse.getEmail(), profileResponse.getName());
-        return profileResponse;
+        return profileService.createProfile(profileRequest);
     }
 
     @GetMapping("/test")

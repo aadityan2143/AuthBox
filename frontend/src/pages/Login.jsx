@@ -41,7 +41,11 @@ const Login = () => {
                 }
             }
         } catch (error) {
-            toast.error(error.response.data.message);
+            if (error.response?.status === 409) {
+                toast.error("Email already exists");
+            } else {
+                toast.error(error.response?.data?.message || error.message);
+            }
         } finally {
             setLoading(false);
         }
