@@ -1,8 +1,8 @@
 import { Link, useNavigate } from "react-router-dom";
 import { assets } from "../assets/assets";
 import { useContext, useEffect, useRef, useState } from "react";
-import { AppContext } from "../context/AppContext";
-import axios from "axios";
+import { AppContext } from "../context/AppContext.js";
+import { api } from "../utils/api.js";
 import { toast } from "react-toastify";
 
 
@@ -52,7 +52,7 @@ const EmailVerify = () => {
         }
         setLoading(true);
         try {
-            const response = await axios.post(backendURL + "/verify-email", {otp});
+            const response = await api.post(backendURL + "/verify-email", {otp});
             if (response.status === 200) {
                 toast.success("OTP verified successfully");
                 getUserData();
@@ -73,7 +73,7 @@ const EmailVerify = () => {
             toast.info("Your email is already verified.");
             navigate("/", { replace: true });
         }
-    }, [isLoggedIn, userData]);
+    }, [isLoggedIn, navigate, userData]);
 
     return (
         <div className="email-verify-container d-flex align-items-center justify-content-center vh-100 position-relative"

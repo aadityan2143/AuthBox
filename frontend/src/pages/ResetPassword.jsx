@@ -1,8 +1,8 @@
 import { useContext, useRef, useState } from "react";
 import { assets } from "../assets/assets";
 import { Link, useNavigate } from "react-router-dom";
-import { AppContext } from "../context/AppContext";
-import axios from "axios";
+import { AppContext } from "../context/AppContext.js";
+import { api } from "../utils/api.js";
 import { toast } from "react-toastify";
 
 const ResetPassword = () => {
@@ -14,10 +14,7 @@ const ResetPassword = () => {
   const [isEmailSent, setIsEmailSent] = useState(false);
   const [otp, setOtp] = useState("");
   const [isOtpSubmitted, setIsOtpSubmitted] = useState(false);
-  const { getUserData, isLoggedIn, userData, backendURL } =
-    useContext(AppContext);
-
-  axios.defaults.withCredentials = true;
+  const { backendURL } = useContext(AppContext);
 
   const handleChange = (event, index) => {
     const value = event.target.value.replace(/\D/, "");
@@ -58,7 +55,7 @@ const ResetPassword = () => {
     e.preventDefault();
     setLoading(true);
     try {
-      const response = await axios.post(
+      const response = await api.post(
         backendURL + "/send-reset-otp?email=" + email,
       );
       if (response.status === 200) {
@@ -76,7 +73,7 @@ const ResetPassword = () => {
 
   const handleVerify = () => {
     const otp = inputRef.current.map((input) => input.value).join("");
-    if (otp.length != 6) {
+    if (otp.length !== 6) {
       toast.error("Please enter all 6 digits of the OTP.");
       return;
     }
@@ -88,7 +85,7 @@ const ResetPassword = () => {
     e.preventDefault();
     setLoading(true);
     try {
-      const response = await axios.post(backendURL + "/reset-password", {
+      const response = await api.post(backendURL + "/reset-password", {
         email,
         otp,
         newPassword,
