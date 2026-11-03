@@ -1,8 +1,8 @@
 import { useContext, useEffect, useRef, useState } from "react";
 import { assets } from "../assets/assets";
 import { useNavigate } from "react-router-dom";
-import { AppContext } from "../context/AppContext";
-import axios from "axios";
+import { AppContext } from "../context/AppContext.js";
+import { api } from "../utils/api.js";
 import { toast } from "react-toastify";
 
 const Menubar = () => {
@@ -23,22 +23,20 @@ const Menubar = () => {
 
     const handleLogout = async() => {
         try {
-            axios.defaults.withCredentials = true;
-            const response = await axios.post(backendURL + "/logout");
+            const response = await api.post(backendURL + "/logout");
             if (response.status === 200) {
                 setIsLoggedIn(false);
                 setUserData(false);
                 navigate("/");
             }
         } catch (error) {
-            toast.error(error.response.data.message);
+            toast.error(error.response?.data?.message || error.message);
         }
     }
 
     const sendVerificationOtp = async () => {
         try {
-            axios.defaults.withCredentials = true;
-            const response = await axios.post(backendURL + "/send-otp");
+            const response = await api.post(backendURL + "/send-otp");
             if (response.status === 200) {
                 navigate("/email-verify");
                 toast.success("OTP has need sent successfully.");
@@ -46,7 +44,7 @@ const Menubar = () => {
                 toast.error("Unable to send OTP!");
             }
         } catch (error) {
-            toast.error("error.response.data.message");
+            toast.error(error.response?.data?.message || error.message);
         }
     }
 

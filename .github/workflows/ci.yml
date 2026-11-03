@@ -1,0 +1,105 @@
+name: CI
+
+on:
+  push:
+    branches: [ "main", "develop" ]
+  pull_request:
+    branches: [ "main", "develop" ]
+
+# A new push to the same branch cancels the older run
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  # ---------------- BACKEND (Spring Boot + Maven) ----------------
+  backend:
+    name: Backend (Maven)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+
+    # A throwaway MySQL so the Spring context can start during tests
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: ci_root_pw
+          MYSQL_DATABASE: authify_test
+          MYSQL_USER: ci_user
+          MYSQL_PASSWORD: ci_user_pw
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -u root -pci_root_pw"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+
+    # Names must match the ${...} placeholders in application.properties.
+    # These are DUMMY values for tests only - nothing here is a real secret.
+    env:
+      DB_URL: jdbc:mysql://localhost:3306/authify_test
+      DB_USERNAME: ci_user
+      DB_PASSWORD: ci_user_pw
+      JWT_SECRET_KEY: ciOnlyDummyJwtSecretKeyNotRealABCDEFGHIJKLMNOPQRSTUVWXYZ01234567
+      SMTP_HOST: localhost
+      SMTP_PORT: "2525"
+      SMTP_USERNAME: ci-dummy-user
+      SMTP_PASSWORD: ci-dummy-password
+      SMTP_FROM: ci@example.com
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: maven
+
+      # trimStackTrace=false makes the log show the full "Caused by" chain
+      - name: Build and test with Maven
+        run: mvn -B clean verify -Dsurefire.trimStackTrace=false
+
+      # If tests fail, keep the detailed reports so you can download and read them
+      - name: Upload test reports on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: surefire-reports
+          path: backend/target/surefire-reports/
+
+  # ---------------- FRONTEND (React + Vite) ----------------
+  frontend:
+    name: Frontend (Vite)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Build
+        run: npm run build

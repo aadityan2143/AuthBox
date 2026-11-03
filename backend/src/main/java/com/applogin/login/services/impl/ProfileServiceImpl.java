@@ -22,12 +22,18 @@ public class ProfileServiceImpl implements ProfileService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final EmailService emailService;
+
     @Override
     public ProfileResponse createProfile(ProfileRequest profileRequest) {
         UserEntity newProfile = convertToUserEntity(profileRequest);
 
         if (!userRepository.existsByEmail(newProfile.getEmail())) {
             newProfile = userRepository.save(newProfile);
+            try {
+                emailService.sendWelcomeEmail(newProfile.getEmail(), newProfile.getName());
+            } catch (Exception e) {
+                throw new RuntimeException("Unable to send welcome email: " +e);
+            }
             return convertToProfileResponse(newProfile);
         }
         throw new ResponseStatusException(HttpStatus.CONFLICT, "Email already exists");
