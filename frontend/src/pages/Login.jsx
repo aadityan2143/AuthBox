@@ -1,8 +1,8 @@
 import { Link, useNavigate } from "react-router-dom";
 import { assets } from "../assets/assets";
 import { useContext, useState } from "react";
-import axios from "axios";
-import { AppContext } from "../context/AppContext";
+import { api } from "../utils/api.js";
+import { AppContext } from "../context/AppContext.js";
 import {toast} from "react-toastify";
 
 const Login = () => {
@@ -17,12 +17,11 @@ const Login = () => {
 
     const onSubmitHandler = async(e) => {
         e.preventDefault();
-        axios.defaults.withCredentials = true;
         setLoading(true);
         try {
             if (isCreateAccount) {
                 //register api
-                const response = await axios.post(`${backendURL}/register`, {name, email, password});
+                const response = await api.post(`${backendURL}/register`, {name, email, password});
                 if (response.status === 201) {
                     navigate("/");
                     toast.success("Account created successfully!");
@@ -30,7 +29,7 @@ const Login = () => {
                     toast.error("Email already exists");
                 }
             } else {
-                const response = await axios.post(`${backendURL}/login`, {email, password});
+                const response = await api.post(`${backendURL}/login`, {email, password});
                 if (response.status === 200) {
                     setIsLoggedIn(true);
                     getUserData();
@@ -41,7 +40,11 @@ const Login = () => {
                 }
             }
         } catch (error) {
-            toast.error(error.response.data.message);
+            if (error.response?.status === 409) {
+                toast.error("Email already exists");
+            } else {
+                toast.error(error.response?.data?.message || error.message);
+            }
         } finally {
             setLoading(false);
         }
