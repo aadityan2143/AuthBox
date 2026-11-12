@@ -1,4 +1,4 @@
-name: CI
+name: CI/CD
 
 on:
   push:
@@ -149,25 +149,52 @@ jobs:
           docker build -t $ECR_REGISTRY/${{ secrets.ECR_FRONTEND_REPO }}:$IMAGE_TAG ./frontend
           docker push $ECR_REGISTRY/${{ secrets.ECR_FRONTEND_REPO }}:$IMAGE_TAG
 
-      # Tell ECS to use the new backend image
-      # This reads the current task definition, swaps in the new image, registers it, then deploys
+      # Download the current backend task definition from ECS as a JSON file
+      - name: Download backend task definition
+        run: |
+          aws ecs describe-task-definition \
+            --task-definition ${{ secrets.ECS_BACKEND_TASK_DEF }} \
+            --query taskDefinition > /tmp/backend-task-def.json
+
+      # Swap the new image into the backend task definition JSON
+      - name: Render new backend task definition
+        id: render-backend
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        with:
+          task-definition: /tmp/backend-task-def.json
+          container-name: backend
+          image: ${{ steps.login-ecr.outputs.registry }}/${{ secrets.ECR_BACKEND_REPO }}:${{ github.sha }}
+
+      # Deploy the updated backend task definition to ECS
       - name: Deploy backend to ECS
         uses: aws-actions/amazon-ecs-deploy-task-definition@v2
         with:
-          task-definition: ${{ secrets.ECS_BACKEND_TASK_DEF }}
+          task-definition: ${{ steps.render-backend.outputs.task-definition }}
           service: ${{ secrets.ECS_BACKEND_SERVICE }}
           cluster: ${{ secrets.ECS_CLUSTER }}
-          image: ${{ steps.login-ecr.outputs.registry }}/${{ secrets.ECR_BACKEND_REPO }}:${{ github.sha }}
-          container-name: backend
           wait-for-service-stability: true
 
-      # Tell ECS to use the new frontend image
+      # Download the current frontend task definition from ECS as a JSON file
+      - name: Download frontend task definition
+        run: |
+          aws ecs describe-task-definition \
+            --task-definition ${{ secrets.ECS_FRONTEND_TASK_DEF }} \
+            --query taskDefinition > /tmp/frontend-task-def.json
+
+      # Swap the new image into the frontend task definition JSON
+      - name: Render new frontend task definition
+        id: render-frontend
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        with:
+          task-definition: /tmp/frontend-task-def.json
+          container-name: frontend
+          image: ${{ steps.login-ecr.outputs.registry }}/${{ secrets.ECR_FRONTEND_REPO }}:${{ github.sha }}
+
+      # Deploy the updated frontend task definition to ECS
       - name: Deploy frontend to ECS
         uses: aws-actions/amazon-ecs-deploy-task-definition@v2
         with:
-          task-definition: ${{ secrets.ECS_FRONTEND_TASK_DEF }}
+          task-definition: ${{ steps.render-frontend.outputs.task-definition }}
           service: ${{ secrets.ECS_FRONTEND_SERVICE }}
           cluster: ${{ secrets.ECS_CLUSTER }}
-          image: ${{ steps.login-ecr.outputs.registry }}/${{ secrets.ECR_FRONTEND_REPO }}:${{ github.sha }}
-          container-name: frontend
           wait-for-service-stability: true
