@@ -40,7 +40,7 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
                         .dispatcherTypeMatchers(DispatcherType.ERROR).permitAll()
-                        .requestMatchers("/login", "/register", "/send-reset-otp", "/reset-password", "/logout", "/is-authenticated")
+                        .requestMatchers("/login", "/register", "/send-reset-otp", "/reset-password", "/logout", "/is-authenticated", "/actuator/health")
                         .permitAll().anyRequest().authenticated())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .logout(AbstractHttpConfigurer::disable)
