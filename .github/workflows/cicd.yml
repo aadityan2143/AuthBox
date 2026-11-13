@@ -173,6 +173,7 @@ jobs:
           service: ${{ secrets.ECS_BACKEND_SERVICE }}
           cluster: ${{ secrets.ECS_CLUSTER }}
           wait-for-service-stability: true
+          wait-for-minutes: 30
 
       # Download the current frontend task definition from ECS as a JSON file
       - name: Download frontend task definition
@@ -198,3 +199,4 @@ jobs:
           service: ${{ secrets.ECS_FRONTEND_SERVICE }}
           cluster: ${{ secrets.ECS_CLUSTER }}
           wait-for-service-stability: true
+          wait-for-minutes: 30
